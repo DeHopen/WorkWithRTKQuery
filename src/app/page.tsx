@@ -1,48 +1,55 @@
 "use client"
-import {useState} from "react";
-import {useAddProductMutation, useDeleteProductMutation, useGetGoodsQuery} from "@/redux/goodApi";
-
+import {useEffect, useState} from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { RootState } from "@/redux/store";
+import { increment, decrement, setInitialCount } from "@/redux/counterSlice";
+import { useAddProductMutation, useDeleteProductMutation, useGetGoodsQuery } from "@/redux/goodApi";
 
 export default function Home() {
-
-  const [count, setCount] = useState('');
   const [newProduct, setNewProduct] = useState('');
-  const {data = [], isLoading} = useGetGoodsQuery(count);
+  const { data = [], isLoading } = useGetGoodsQuery();
   const [addProduct] = useAddProductMutation();
   const [deleteProduct] = useDeleteProductMutation();
+  const counter = useSelector((state: RootState) => state.counter.value);
+  const dispatch = useDispatch();
+
+
+  useEffect(() => {
+    if (!isLoading && data.length > 0) {
+      dispatch(setInitialCount(data.length));
+    }
+  }, [data, isLoading, dispatch]);
 
   const handleAddProduct = async () => {
-    if(newProduct) {
-      await addProduct({name: newProduct}).unwrap();
+    if (newProduct) {
+      await addProduct({ name: newProduct }).unwrap();
       setNewProduct('');
+      dispatch(increment());
     }
-  }
+  };
 
-  const handleDeleteProduct = async (id:number) => {
+  const handleDeleteProduct = async (id: number) => {
     await deleteProduct(id.toString()).unwrap();
-  }
+    dispatch(decrement());
+  };
 
-  if (isLoading) return <h1>Loading...</h1>
+  if (isLoading) return <h1>Loading...</h1>;
 
   return (
       <div>
-        <div>
+        <div className='bg-amber-950 h-20 w-1/4 pl-3'>
           <input
               type="text"
               value={newProduct}
               onChange={(e) => setNewProduct(e.target.value)}
+              className='border-2 border-rose-500 rounded-lg p-1'
           />
-          <button onClick={handleAddProduct}>Add product</button>
+          <button className='m-5 bg-amber-300 p-1 rounded-lg' onClick={handleAddProduct}>Add Product</button>
         </div>
         <div>
-          <select value={count} onChange={(e) => setCount(e.target.value)}>
-            <option value="">all</option>
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-          </select>
+          <p>Product Count: {counter}</p>
         </div>
-        <ul>
+        <ul className='text-center'>
           {data.map(item => (
               <li key={item.id} onClick={() => handleDeleteProduct(item.id)}>
                 {item.name}
